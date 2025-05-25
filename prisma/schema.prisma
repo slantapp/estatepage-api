@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String    @id @default(cuid())
+  email                  String    @unique
+  password               String
+  firstName              String?
+  lastName               String?
+  profileUrl             String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  // Relations
+  services               Service[]
+  estateId               String?
+  estate                 Estate?   @relation(fields: [estateId], references: [id])
+
+  // Add these fields:
+  passwordResetToken     String?   // hashed token for password reset
+  resetTokenExpiresAt    BigInt?   // store as timestamp (milliseconds since epoch)
+  emailVerificationToken String?   // hashed token for email verification
+  verifiedUser          String   @default("UNVERIFIED") // status of user verification
+  passwordResetOTP      String?   // OTP for password reset
+  verificationOTP      String?   // OTP for email verification
+  otpExpiresAt          BigInt?   // store as timestamp (milliseconds since epoch)
+  emailVerifiedAt       BigInt?   // store as timestamp (milliseconds since epoch)
+  
+}
+model Service {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Estate {
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
