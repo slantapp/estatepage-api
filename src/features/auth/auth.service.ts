@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -19,6 +19,7 @@ import { plainToInstance } from 'class-transformer';
 import { CreateUserDto } from '../users/dtos/user.dto';
 import { UpdateUserDto } from '../users/dtos/update-user.dto';
 import { User } from '@prisma/client';
+import { Not } from 'typeorm';
 // import dayjs from 'dayjs';
 
 @Injectable()
@@ -113,35 +114,43 @@ export class AuthService {
     }
 
     /**
-     * @description update user information
-     * @param details user data
-     * @param res Express Response
-     * @param next Express nextFunction
-     * @returns
-     */
+  * @description Update user information
+  * @param details User data
+  * @param res Express Response
+  * @param next Express NextFunction
+  */
     async updateProfile(
         details: UpdateUserDto,
         res: Response,
-        next: NextFunction,
     ) {
         try {
-            const userID = details.userID!;
+            const userID = details.id;
 
-            const updatedUser = await this.usersService.updateUser(
-                userID,
-                details,
-                res,
-            );
-
-            if (updatedUser) {
-                jsonResponse(StatusCodes.OK, updatedUser, res);
-                return;
+            if (!userID) {
+                return jsonResponse(StatusCodes.BAD_REQUEST, '', res, 'User ID is required');
             }
-            return updatedUser;
+
+            const user = await this.usersService.getUserById(userID);
+
+            if (!user) {
+                return jsonResponse(StatusCodes.NOT_FOUND, '', res, 'User not found');
+            }
+
+            const updatedUser = await this.usersService.updateUser(details);
+
+            if (!updatedUser) {
+                return jsonResponse(StatusCodes.INTERNAL_SERVER_ERROR, '', res, 'Failed to update user');
+            }
+
+            return jsonResponse(StatusCodes.OK, updatedUser, res, 'User profile updated successfully');
         } catch (error) {
             console.error(error);
 
-            next(error);
+            if (error instanceof NotFoundException) {
+                return jsonResponse(StatusCodes.NOT_FOUND, '', res, error.message);
+            }
+
+            throw new Error('An error occurred while updating the user profile');
         }
     }
 
@@ -181,10 +190,10 @@ export class AuthService {
     async emailVerification(otp: string, res: Response) {
         const user = await this.usersService.getUserByOTP(otp);
         if (!user) {
-            jsonResponse(StatusCodes.BAD_REQUEST, '', res, 'Invalid token');
+            jsonResponse(StatusCodes.BAD_REQUEST, '', res, 'Invalid token or token has expired');
             return;
         }
-        if (user.verifiedUser === Verifications.VERIFIED) {
+        if (user.verificationStatus === Verifications.VERIFIED) {
             jsonResponse(
                 StatusCodes.BAD_REQUEST,
                 '',
@@ -195,14 +204,12 @@ export class AuthService {
         }
         const verifyUser = {
             ...user,
-            verifiedUser: Verifications.VERIFIED,
+            verificationStatus: Verifications.VERIFIED,
             emailVerifiedAt: BigInt(Date.now()),
             verificationOTP: null,
-            firstName: user.firstName ?? undefined,
-            lastName: user.lastName ?? undefined,
-        };
+        } as UpdateUserDto;
 
-        this.usersService.updateUser(user.id, verifyUser, res);
+        this.usersService.updateUser(verifyUser);
 
         return 'Email verified successfully';
     }
@@ -221,7 +228,7 @@ export class AuthService {
                 return;
             }
 
-            if (user.verifiedUser === Verifications.UNVERIFIED) {
+            if (user.verificationStatus === Verifications.UNVERIFIED) {
                 jsonResponse(
                     StatusCodes.BAD_REQUEST,
                     '',
@@ -241,14 +248,11 @@ export class AuthService {
             const verifyUser = {
                 ...user,
                 passwordResetOTP,
-                firstName: user.firstName ?? undefined,
-                lastName: user.lastName ?? undefined,
-            };
+            } as UpdateUserDto;
 
             const updatedUser = await this.usersService.updateUser(
-                user.id,
                 verifyUser,
-                res,
+
             );
 
             //   await new EmailService(
@@ -301,11 +305,9 @@ export class AuthService {
             user.passwordResetOTP = passwordResetOTP;
             user.resetTokenExpiresAt = BigInt(Date.now() + 15 * 60 * 1000); // Example expiration time
 
-            await this.usersService.updateUser(user.id, {
-                ...user,
-                firstName: user.firstName ?? undefined,
-                lastName: user.lastName ?? undefined,
-            }, res);
+            await this.usersService.updateUser(
+                { ...user } as UpdateUserDto
+            );
 
             return jsonResponse(
                 StatusCodes.OK,
@@ -345,11 +347,10 @@ export class AuthService {
             user.passwordResetToken = null;
             user.resetTokenExpiresAt = null;
 
-            await this.usersService.updateUser(user.id, {
-                ...user,
-                firstName: user.firstName ?? undefined,
-                lastName: user.lastName ?? undefined,
-            }, res);
+            await this.usersService.updateUser({
+                ...user as UpdateUserDto,
+             
+            });
 
             jsonResponse(
                 StatusCodes.OK,

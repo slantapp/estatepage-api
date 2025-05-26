@@ -12,5 +12,18 @@ export class CreateNewUserDto {
   @IsString()
   password: string;
 
+  @ApiProperty()
+  @IsString()
+  fullName: string;
+
+  @ApiProperty()
+  @IsString()
+  HauseAddress: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  phoneNumber?: string;
+
  
 }

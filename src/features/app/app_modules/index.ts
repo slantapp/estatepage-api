@@ -5,9 +5,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ClsModule } from 'nestjs-cls';
 import { LoggerModule } from 'nestjs-pino';
 import { AppConfig } from '../app.config';
-import { AuthModule } from 'src/futures/auth/auth.module';
-import { UsersModule } from 'src/futures/users/users.module';
-import { PrismaModule } from 'src/futures/prisma/prisma.module';
+import { AuthModule } from 'src/features/auth/auth.module';
+import { UsersModule } from 'src/features/users/users.module';
+import { PrismaModule } from 'src/features/prisma/prisma.module';
 
 
 export const appModules: (

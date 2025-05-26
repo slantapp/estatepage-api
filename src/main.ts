@@ -1,7 +1,7 @@
 import { NestApplication, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
-import { AppModule } from './futures/app';
+import { AppModule } from './features/app';
 import { config } from 'dotenv';
 import helmet from 'helmet';
 

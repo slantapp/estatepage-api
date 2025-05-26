@@ -90,8 +90,8 @@ export class AuthController {
     @Res() res: Response,
     @Next() next: NextFunction,
   ) {
-    details.userID = (req.user as User).id;
-    return await this.authService.updateProfile(details, res, next);
+    details.id = (req.user as User).id;
+    return await this.authService.updateProfile(details, res);
   }
 
  

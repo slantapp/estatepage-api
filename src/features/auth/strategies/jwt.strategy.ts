@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ClsService } from 'nestjs-cls';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from 'src/futures/users/users.service';
+import { UsersService } from 'src/features/users/users.service';
 import { ContextStore } from 'src/common/interface/context_store';
 import { User } from '@prisma/client';
 

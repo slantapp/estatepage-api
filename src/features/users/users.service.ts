@@ -13,7 +13,7 @@ import { User } from '@prisma/client';
 export class UsersService {
   constructor(
     private prisma: PrismaService,
-  ) {}
+  ) { }
 
   async getUserByEmail(email: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { email } });
@@ -38,11 +38,11 @@ export class UsersService {
       );
       return;
     }
-     const userID = randomUUID();
-     console.log('User ID:', userID);
+    const userID = randomUUID();
+    console.log('User ID:', userID);
     try {
       const newUser = await this.prisma.user.create({
-        data: {  id: userID as string,...details },
+        data: { id: userID as string, ...details },
       });
       return newUser;
     } catch (error) {
@@ -52,25 +52,16 @@ export class UsersService {
   }
 
   async updateUser(
-    userId: string,
-    userDetails: Partial<UpdateUserDto>,
-    res: Response,
-  ): Promise<User | void> {
-    try {
-      const user = await this.getUserById(userId);
-      if (!user) {
-        jsonResponse(StatusCodes.BAD_REQUEST, '', res, 'Invalid User Id');
-        return;
-      }
-      const updatedUser = await this.prisma.user.update({
-        where: { id: userId },
-        data: userDetails,
-      });
-      return updatedUser;
-    } catch (error) {
-      console.error(error);
-      jsonResponse(StatusCodes.INTERNAL_SERVER_ERROR, '', res, error.message);
-    }
+    userDetails: UpdateUserDto,
+  ): Promise<User | null> {
+
+    const userId = userDetails.id;
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: userDetails,
+    });
+    return updatedUser;
+
   }
 
   async getUserByPasswordResetToken(token: string): Promise<User | null> {

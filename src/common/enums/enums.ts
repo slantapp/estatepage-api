@@ -5,9 +5,7 @@ export enum Verifications {
 
 export enum UserRoles {
   ADMIN = 'ADMIN',
-  TEACHER = 'TEACHER',
-  STUDENT = 'STUDENT',
-  PARENT = 'PARENT/GUADIAN',
+  USER = 'USER',
 }
 
 export enum TRANSACTIONSTATUS {
@@ -21,30 +19,17 @@ export enum PAYMENTMETHODS {
   OTHER = 'OTHER',
 }
 
-export enum TRANSACTIONTYPE {
-  FUNDING = 'Funding',
-  DEBIT = 'Debit',
+
+export enum ServiceStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  EXPIRED = 'EXPIRED',
 }
 
-export enum DIRECTION {
-  IN = 'IN',
-  OUT = 'OUT',
-}
-
-export enum MARK {
-  PRESENT = 'Present',
-  ABSENCE = 'Absence',
-}
-
-export enum REASONS {
-  FORMAL = 'Formal',
-  TRAVEL = 'Travel',
-  SICKNESS = 'Sickness',
-  NOCLUE = 'No Clue',
-  HOLIDAY = 'Holiday',
-}
-
-export enum ASSIGNMENTSTATUS {
-  ACTIVE = 'Active',
-  NOTACTIVE = 'Not-Active',
+export enum BillingCycle {
+  MONTHLY = 'MONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  SEMI_ANNUALLY = 'SEMI_ANNUALLY',
+  ANNUALLY = 'ANNUALLY',
+  ONE_TIME = 'ONE_TIME',
 }

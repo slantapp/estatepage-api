@@ -14,44 +14,133 @@ datasource db {
 }
 
 model User {
-  id                     String    @id @default(cuid())
-  email                  String    @unique
-  password               String
-  firstName              String?
-  lastName               String?
-  profileUrl             String?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  email        String    @unique
+  password     String
+  fullName     String?
+  profileUrl   String?
+  houseAddress String?
+  phoneNumber  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   // Relations
-  services               Service[]
-  estateId               String?
-  estate                 Estate?   @relation(fields: [estateId], references: [id])
+  estateId     String?
+  estate       Estate?   @relation(fields: [estateId], references: [id])
 
   // Add these fields:
-  passwordResetToken     String?   // hashed token for password reset
-  resetTokenExpiresAt    BigInt?   // store as timestamp (milliseconds since epoch)
-  emailVerificationToken String?   // hashed token for email verification
-  verifiedUser          String   @default("UNVERIFIED") // status of user verification
-  passwordResetOTP      String?   // OTP for password reset
-  verificationOTP      String?   // OTP for email verification
-  otpExpiresAt          BigInt?   // store as timestamp (milliseconds since epoch)
-  emailVerifiedAt       BigInt?   // store as timestamp (milliseconds since epoch)
-  
+  passwordResetToken     String? // hashed token for password reset
+  resetTokenExpiresAt    BigInt? // store as timestamp (milliseconds since epoch)
+  emailVerificationToken String? // hashed token for email verification
+  verificationStatus     String  @default("UNVERIFIED") // status of user verification
+  passwordResetOTP       String? // OTP for password reset
+  verificationOTP        String? // OTP for email verification
+  otpExpiresAt           BigInt? // store as timestamp (milliseconds since epoch)
+  emailVerifiedAt        BigInt? // store as timestamp (milliseconds since epoch)
+
+  Notification Notification[]
+
+  Payment Payment[]
+
+  AuditLog AuditLog[]
+
+  role  String @default("USER") // e.g., "USER", "ADMIN", "SUPER_ADMIN"
 }
+
 model Service {
-  id        String   @id @default(cuid())
-  name      String
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String    @id @default(cuid())
+  name         String    @unique
+  
+  description  String?
+  price        Float
+  billingCycle String // e.g., "monthly", "yearly"
+  status       String // e.g., "active", "inactive", "cancelled"
+  startDate    DateTime  @default(now())
+  endDate      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  estateId     String
+  estate       Estate    @relation(fields: [estateId], references: [id])
+
+
+  Payment Payment[]
 }
 
 model Estate {
+  id           String   @id @default(cuid())
+  name         String
+  address      String
+  supportEmail String?
+  supportPhone String?
+  users        User[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  PaymentGatewayConfig PaymentGatewayConfig[]
+
+  Service Service[]
+}
+
+model Notification {
   id        String   @id @default(cuid())
-  name      String
-  address   String
-  users     User[]
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String // e.g., "email", "sms", "push"
+  content   String
+  status    String // e.g., "sent", "failed", "pending"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id])
+  amount      Float
+  status      String // e.g., "paid", "pending", "failed"
+  paymentDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  PaymentTransaction PaymentTransaction[]
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String // e.g., "create", "update", "delete"
+  entity    String // e.g., "User", "Service", "Estate"
+  entityId  String // ID of the entity being audited
+  details   String? // Additional details about the action
+  createdAt DateTime @default(now())
+}
+
+
+model PaymentGatewayConfig {
+  id       String @id @default(cuid())
+  estateId String
+  estate   Estate @relation(fields: [estateId], references: [id])
+
+  provider  String // e.g., "Paystack", "Stripe", etc.
+  currency  String // e.g., "NGN", "USD"
+  apiKey    String
+  secretKey String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentTransaction {
+  id            String   @id @default(cuid())
+  paymentId     String
+  payment       Payment  @relation(fields: [paymentId], references: [id])
+  transactionId String // Unique ID from the payment gateway
+  status        String // e.g., "success", "failed", "pending"
+  amount        Float
+  currency      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
