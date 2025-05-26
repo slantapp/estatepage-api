@@ -21,28 +21,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(validationPayload: {
+  async validate(payload: {
     email: string;
-    sub: string;
-    userID: string;
+    sub: string; // standard JWT
+    estateId: string;
   }): Promise<User> {
     try {
-      console.log('JWT Payload:', validationPayload);
+      console.log('JWT Payload:', payload);
 
-      this.cls.set('email', validationPayload.email);
-
-      const user = await this.userService.getUserById(validationPayload.userID);
+      const user = await this.userService.getUserById(payload.sub);
 
       if (!user) {
-        console.log(user);
         throw new UnauthorizedException('User not found');
       }
 
+      // Set context
+      this.cls.set('email', user.email);
       this.cls.set('userID', user.id);
+      this.cls.set('role', user.role);
+      this.cls.set('estateId', user.estateId!);
 
-      return user || null;
+      return user;
     } catch (error) {
       console.error('Validation Error:', error.message);
-      throw new UnauthorizedException('Invalid token');}
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 }

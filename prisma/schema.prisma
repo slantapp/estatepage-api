@@ -43,7 +43,7 @@ model User {
 
   AuditLog AuditLog[]
 
-  role  String @default("USER") // e.g., "USER", "ADMIN", "SUPER_ADMIN"
+  role  String @default("USER") // e.g., "USER", "ADMIN"
 }
 
 model Service {

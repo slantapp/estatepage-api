@@ -21,9 +21,9 @@ export enum PAYMENTMETHODS {
 
 
 export enum ServiceStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  EXPIRED = 'EXPIRED',
+  ACTIVE = 'Active',
+  INACTIVE = 'Inactive',
+  EXPIRED = 'Expired',
 }
 
 export enum BillingCycle {

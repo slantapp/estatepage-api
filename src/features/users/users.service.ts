@@ -20,7 +20,9 @@ export class UsersService {
   }
 
   async getUserById(userID: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { id: userID } });
+    return this.prisma.user.findUnique({ where: { id: userID }, include: {
+      estate: true,  // Include estate information if needed
+    } });
   }
 
   async createNewUser(

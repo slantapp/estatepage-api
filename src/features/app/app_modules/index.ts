@@ -8,6 +8,8 @@ import { AppConfig } from '../app.config';
 import { AuthModule } from 'src/features/auth/auth.module';
 import { UsersModule } from 'src/features/users/users.module';
 import { PrismaModule } from 'src/features/prisma/prisma.module';
+import { EstateModule } from 'src/features/estate/estate.module';
+import { EstateServiceModule } from 'src/features/estate-service/estate-service.module';
 
 
 export const appModules: (
@@ -35,4 +37,6 @@ export const appModules: (
   AuthModule,
   UsersModule,
   PrismaModule,
+  EstateModule,
+  EstateServiceModule
 ];
