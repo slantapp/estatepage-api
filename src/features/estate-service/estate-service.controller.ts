@@ -95,4 +95,30 @@ export class EstateServiceController {
 
     };
   }
+
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Get('/admin/payment-activities/:estateId')
+  async fetchServicesPaymentActivities(
+    @Req() req: Request,
+    @Param('estateId') estateId: string,
+    @Query('status') status?: 'COMPLETED' | 'PENDING' | 'FAILED',
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    
+    const result = await this.estateServiceService.fetchAllPaymentStatusesForAllUsersInEstate(
+      estateId,
+      status,
+      Number(page),
+      Number(limit),
+    );
+
+    return {
+      message: 'Fetched services for user in estate successfully',
+      data: result,
+
+    };
+  }
 }

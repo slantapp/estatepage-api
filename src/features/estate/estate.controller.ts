@@ -5,6 +5,9 @@ import { UpdateEstateDto } from './dto/update-estate.dto';
 import jsonResponse from 'src/common/utils/lib';
 import { stat } from 'fs';
 import { StatusCodes } from 'http-status-codes';
+import { BulkCreateEstateFeatureDto, CreateEstateFeatureDto } from './dto/create-estate-feature.dto';
+import { BulkCreateEstateGalleryDto, CreateEstateGalleryDto } from './dto/create-estate-gallery.dto';
+import { BulkCreateEstateStreetDto, CreateEstateStreetDto } from './dto/create-estate-street.dto';
 
 @Controller('estate')
 export class EstateController {
@@ -45,4 +48,56 @@ export class EstateController {
   remove(@Param('id') id: string) {
     return this.estateService.remove(+id);
   }
+
+
+  // ---- Feature ----
+  @Post('feature')
+  createFeature(@Body() dto: CreateEstateFeatureDto) {
+    return this.estateService.createEstateFeature(dto);
+  }
+
+  @Post('bulk-feature')
+  createBulkFeature(@Body() dto: BulkCreateEstateFeatureDto) {
+    return this.estateService.bulkCreateEstateFeatures(dto);
+  }
+
+  @Get(':estateId/features')
+  getFeatures(@Param('estateId') estateId: string) {
+    return this.estateService.getAllEstateFeatures(estateId);
+  }
+
+  // ---- Gallery ----
+  @Post('gallery')
+  createGallery(@Body() dto: CreateEstateGalleryDto) {
+    return this.estateService.createEstateGallery(dto);
+  }
+
+  @Post('bulk-gallery')
+  createBulkGallery(@Body() dto: BulkCreateEstateGalleryDto) {
+    return this.estateService.bulkCreateEstateGallery(dto);
+  }
+
+  @Get(':estateId/gallery')
+  getGallery(@Param('estateId') estateId: string) {
+    return this.estateService.getAllEstateGallery(estateId);
+  }
+
+  // ---- Streets ----
+  @Post('street')
+  createStreet(@Body() dto: CreateEstateStreetDto) {
+    return this.estateService.createEstateStreet(dto);
+  }
+
+  @Post('bulk-street')
+  createBulkStreet(@Body() dto: BulkCreateEstateStreetDto) {
+    return this.estateService.bulkCreateEstateStreets(dto);
+  }
+
+
+  @Get(':estateId/streets')
+  getStreets(@Param('estateId') estateId: string) {
+    return this.estateService.getAllEstateStreets(estateId);
+  }
+
+
 }

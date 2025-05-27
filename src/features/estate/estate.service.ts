@@ -3,6 +3,11 @@ import { CreateEstateDto } from './dto/create-estate.dto';
 import { UpdateEstateDto } from './dto/update-estate.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { encrypt } from 'src/common/utils/encryptor.utils';
+import { BulkCreateEstateFeatureDto, CreateEstateFeatureDto } from './dto/create-estate-feature.dto';
+import { BulkCreateEstateGalleryDto, CreateEstateGalleryDto } from './dto/create-estate-gallery.dto';
+import { BulkCreateEstateStreetDto, CreateEstateStreetDto } from './dto/create-estate-street.dto';
+
+type OneOrMany<T> = T | T[];
 
 @Injectable()
 export class EstateService {
@@ -82,5 +87,63 @@ export class EstateService {
 
   remove(id: number) {
     return `This action removes a #${id} estate`;
+  }
+
+
+  // ---- EstateFeature ----
+  async createEstateFeature(dto: CreateEstateFeatureDto) {
+    return this.prisma.estateFeature.create({ data: dto });
+  }
+
+  async getAllEstateFeatures(estateId: string) {
+    return this.prisma.estateFeature.findMany({
+      where: { estateId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // ---- EstateGallery ----
+  async createEstateGallery(dto: CreateEstateGalleryDto) {
+    return this.prisma.estateGallery.create({ data: dto });
+  }
+
+  async getAllEstateGallery(estateId: string) {
+    return this.prisma.estateGallery.findMany({
+      where: { estateId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // ---- EstateStreet ----
+  async createEstateStreet(dto: CreateEstateStreetDto) {
+    return this.prisma.estateStreet.create({ data: dto });
+  }
+
+  async getAllEstateStreets(estateId: string) {
+    return this.prisma.estateStreet.findMany({
+      where: { estateId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+
+  async bulkCreateEstateFeatures(dto: BulkCreateEstateFeatureDto) {
+  return this.prisma.estateFeature.createMany({
+    data: dto.items,
+    skipDuplicates: true, // optional
+  });
+}
+  async bulkCreateEstateGallery(dto:  BulkCreateEstateGalleryDto) {
+    return this.prisma.estateGallery.createMany({
+      data: dto.items,
+      skipDuplicates: true, // optional
+    });
+  }
+
+  async bulkCreateEstateStreets(dto: BulkCreateEstateStreetDto) {
+    return this.prisma.estateStreet.createMany({
+      data: dto.items,
+      skipDuplicates: true, // optional
+    });
   }
 }

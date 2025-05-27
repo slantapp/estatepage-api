@@ -145,6 +145,113 @@ export class EstateServiceService {
   }
 
 
+
+  /**
+   * @description Fetches all payment statuses for all users in a specific estate.
+   * @param estateId - The ID of the estate to fetch payment statuses for.
+   * @param filterStatus - Optional filter for payment status (COMPLETED, PENDING, FAILED).
+   * @param page - The page number for pagination (default is 1).
+   * @param limit - The number of records to return per page (default is 10).
+   * @returns An object containing the payment status matrix, total count, current page, and limit.
+   */
+
+  async fetchAllPaymentStatusesForAllUsersInEstate(
+    estateId: string,
+    filterStatus?: 'COMPLETED' | 'PENDING' | 'FAILED',
+    page = 1,
+    limit = 10,
+  ) {
+    const skip = (page - 1) * limit;
+
+    // Fetch all services in the estate
+    const services = await this.prisma.service.findMany({
+      where: { estateId },
+      select: {
+        id: true,
+        name: true,
+        billingCycle: true,
+        status: true,
+        createdAt: true,
+
+      },
+    });
+
+    // Fetch all users in the estate
+    const users = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phoneNumber: true,
+      },
+    });
+
+    // Fetch all payments in this estate (to map easily)
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        service: { estateId },
+      },
+      select: {
+        id: true,
+        userId: true,
+        serviceId: true,
+        status: true,
+        amount: true,
+        createdAt: true,
+      },
+    });
+
+    // Create a map of payments by `${userId}_${serviceId}`
+    const paymentMap = new Map<string, typeof payments[number]>();
+    payments.forEach((p) => {
+      paymentMap.set(`${p.userId}_${p.serviceId}`, p);
+    });
+
+    const matrix = services.flatMap((service) => {
+      return users.map((user) => {
+        const key = `${user.id}_${service.id}`;
+        const payment = paymentMap.get(key);
+
+        const paymentStatus = payment?.status ?? 'PENDING';
+
+        return {
+          serviceId: service.id,
+          serviceName: service.name,
+          billingCycle: service.billingCycle,
+          serviceStatus: service.status,
+
+          userId: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+
+          paymentStatus,
+          paymentDate: payment?.createdAt ?? service.createdAt,
+          amount: payment?.amount ?? null,
+        };
+      });
+    });
+
+    // Apply filter if needed
+    const filtered = filterStatus
+      ? matrix.filter((entry) => entry.paymentStatus === filterStatus)
+      : matrix;
+
+    const total = filtered.length;
+
+    // Apply pagination after filtering
+    const paginated = filtered.slice(skip, skip + limit);
+
+    return {
+      data: paginated,
+      total,
+      page,
+      limit,
+    };
+  }
+
+
+
   /**
    * @description Retrieves all services for a specific estate with pagination.
    * @param estateId - The ID of the estate to retrieve services for.

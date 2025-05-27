@@ -79,6 +79,12 @@ model Estate {
   PaymentGatewayConfig PaymentGatewayConfig[]
 
   Service Service[]
+
+  EstateFeature EstateFeature[]
+
+  EstateGallery EstateGallery[]
+
+  EstateStreet EstateStreet[]
 }
 
 model Notification {
@@ -143,4 +149,33 @@ model PaymentTransaction {
   currency      String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+model EstateFeature {
+  id          String   @id @default(cuid())
+  estateId    String
+  estate      Estate   @relation(fields: [estateId], references: [id])
+  featureName String // e.g., "Parking", "Gym", "Pool"
+  description String?
+  iconUrl     String? // URL of the icon representing the feature
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model EstateGallery {
+  id        String   @id @default(cuid())
+  estateId  String
+  estate    Estate   @relation(fields: [estateId], references: [id])
+  imageUrl  String // URL of the image
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EstateStreet {
+  id        String   @id @default(cuid())
+  estateId  String
+  imageUrl  String // URL of the street image
+  estate    Estate   @relation(fields: [estateId], references: [id])
+  streetName String // Name of the street
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

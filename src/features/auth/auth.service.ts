@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -107,9 +107,12 @@ export class AuthService {
                 excludeExtraneousValues: true, // Ensures only `@Expose` fields are included
             });
 
-            return jsonResponse(StatusCodes.OK, responseDto, res);
+             jsonResponse(StatusCodes.OK, responseDto, res);
         } catch (error) {
             console.error(error);
+            if(error instanceof ConflictException) {
+                return jsonResponse(StatusCodes.CONFLICT, '', res, error.message);
+            }
         }
     }
 

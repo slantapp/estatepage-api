@@ -18,7 +18,7 @@ export class CreateNewUserDto {
 
   @ApiProperty()
   @IsString()
-  HauseAddress: string;
+  houseAddress: string;
 
   @ApiProperty()
   @IsString()
