@@ -91,7 +91,6 @@ export class AuthService {
             };
 
 
-
             console.log('User Saving:', userSaving);
             const saveduser = await this.usersService.createNewUser(userSaving, res);
             // console.log('savedUser', saveduser);
@@ -101,13 +100,13 @@ export class AuthService {
             //     createUserDto.email,
             //     verificationOtp,
             //   ).EmailVerification();
-
+            
             // Transform saved user into UserResponseDto
             const responseDto = plainToInstance(UserResponseDto, saveduser, {
                 excludeExtraneousValues: true, // Ensures only `@Expose` fields are included
             });
 
-             jsonResponse(StatusCodes.OK, responseDto, res);
+             jsonResponse(StatusCodes.OK, {user: responseDto}, res);
         } catch (error) {
             console.error(error);
             if(error instanceof ConflictException) {
@@ -145,7 +144,7 @@ export class AuthService {
                 return jsonResponse(StatusCodes.INTERNAL_SERVER_ERROR, '', res, 'Failed to update user');
             }
 
-            return jsonResponse(StatusCodes.OK, updatedUser, res, 'User profile updated successfully');
+            return jsonResponse(StatusCodes.OK, {user: updatedUser}, res, 'User profile updated successfully');
         } catch (error) {
             console.error(error);
 
@@ -167,7 +166,7 @@ export class AuthService {
             const payload = {
                 email: user.email,
                 sub: user.id,
-                userID: user.id,
+                role: user.role,
             };
 
             const token = this.jwtService.sign(payload);
@@ -177,7 +176,8 @@ export class AuthService {
             });
             return jsonResponse(
                 StatusCodes.OK, {
-                access_token: token
+                token: token,
+                user: responseDto,
             }, res)
 
         } catch (error) {

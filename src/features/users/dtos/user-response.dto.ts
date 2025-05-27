@@ -5,4 +5,7 @@ import { CreateUserDto } from './user.dto';
 export class UserResponseDto extends CreateUserDto {
     @Expose()
     id: string;
+
+    @Expose()
+    role: string;
 }
