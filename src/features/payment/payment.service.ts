@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service'; // Import PrismaService
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
+import axios from 'axios';
+import { WebhookDto } from './dto/webHook-payload.dto';
 
 @Injectable()
 export class PaymentService {
@@ -72,39 +74,78 @@ export class PaymentService {
   }
 
   /**
-   * User initiates a payment for a service.
+   * User initiates a payment for a service and gets Flutterwave payment link.
    */
-  async initiatePayment(data: {
-    userId: string;
-    serviceId: string;
-    amount: number;
-  }) {
-    // Create a pending payment
-    return this.prisma.payment.create({
-      data: {
-        userId: data.userId,
-        serviceId: data.serviceId,
-        amount: data.amount,
-        status: 'pending',
-      },
-    });
+  async initiatePayment(data: CreatePaymentDto) {
+    try {
+      // 1. Generate a unique payment reference
+      const paymentReference = `ESTATE-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+
+      // 2. Create a pending payment in your DB with the reference
+      const payment = await this.prisma.payment.create({
+        data: {
+          userId: data.userId,
+          serviceId: data.serviceId,
+          amount: data.amount,
+          status: 'pending',
+          paymentReference,
+        },
+      });
+
+      // 3. Call Flutterwave initialize endpoint
+      const flutterwaveRes = await axios.post(
+        'https://api.flutterwave.com/v3/payments',
+        {
+          tx_ref: paymentReference,
+          amount: data.amount,
+          currency: data.currency || 'NGN',
+          redirect_url: process.env.FLW_REDIRECT_URL,
+          customer: {
+            email: data.email,
+            name: data.fullName || '',
+          },
+          customizations: {
+            title: data.serviceName || 'Payment for Service',
+            description: `Payment for ${data.serviceName || 'Service'}`,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
+          },
+        }
+      );
+
+      // 4. Return payment link and reference to frontend
+      return {
+        paymentId: payment.id,
+        paymentReference,
+        paymentLink: flutterwaveRes.data.data.link,
+      };
+    } catch (error) {
+      // Handle errors from DB or Flutterwave
+      if (error.response && error.response.data) {
+        // Flutterwave error
+        throw new Error(`Flutterwave error: ${JSON.stringify(error.response.data)}`);
+      }
+      throw new Error(`Failed to initiate payment: ${error.message}`);
+    }
   }
 
   /**
    * Handle payment gateway webhook (create transaction and update payment).
    */
-  async handlePaymentWebhook(webhookData: {
-    paymentId: string;
-    transactionId: string;
-    transactionReference: string;
-    status: string; // 'success', 'failed', etc.
-    amount: number;
-    currency: string;
-  }) {
-    // Create the transaction
+  async handlePaymentWebhook(webhookData: WebhookDto) {
+    // 1. Find the payment by reference
+    const payment = await this.prisma.payment.findUnique({
+      where: { paymentReference: webhookData.tx_ref },
+    });
+    if (!payment) throw new Error('Payment not found for reference');
+
+    // 2. Create the transaction
     const transaction = await this.prisma.paymentTransaction.create({
       data: {
-        paymentId: webhookData.paymentId,
+        paymentId: payment.id,
         transactionId: webhookData.transactionId,
         transactionReference: webhookData.transactionReference,
         status: webhookData.status,
@@ -113,9 +154,9 @@ export class PaymentService {
       },
     });
 
-    // Update the payment status
+    // 3. Update the payment status
     await this.prisma.payment.update({
-      where: { id: webhookData.paymentId },
+      where: { id: payment.id },
       data: { status: webhookData.status },
     });
 

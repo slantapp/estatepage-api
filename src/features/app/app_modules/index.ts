@@ -10,6 +10,7 @@ import { UsersModule } from 'src/features/users/users.module';
 import { PrismaModule } from 'src/features/prisma/prisma.module';
 import { EstateModule } from 'src/features/estate/estate.module';
 import { EstateServiceModule } from 'src/features/estate-service/estate-service.module';
+import { PaymentModule } from 'src/features/payment/payment.module';
 
 
 export const appModules: (
@@ -38,5 +39,6 @@ export const appModules: (
   UsersModule,
   PrismaModule,
   EstateModule,
-  EstateServiceModule
+  EstateServiceModule,
+  PaymentModule
 ];

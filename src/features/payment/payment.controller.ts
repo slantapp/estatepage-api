@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { Request } from 'express';
+import { WebhookDto } from './dto/webHook-payload.dto';
+import { JwtAuthGuard } from '../auth/guard/JWT-auth.guard';
 
 @Controller('payment')
 export class PaymentController {
@@ -36,8 +38,10 @@ export class PaymentController {
   /**
    * User initiates a payment for a service.
    */
+  @UseGuards(JwtAuthGuard)
   @Post('initiate')
-  async initiatePayment(@Body() body: { userId: string; serviceId: string; amount: number }) {
+  async initiatePayment(@Body() body:CreatePaymentDto, @Req() req: Request) {
+    body.userId = req.user['id']; 
     return this.paymentService.initiatePayment(body);
   }
 
@@ -45,14 +49,7 @@ export class PaymentController {
    * Webhook endpoint for payment gateway to notify about transaction status.
    */
   @Post('webhook')
-  async handleWebhook(@Body() body: {
-    paymentId: string;
-    transactionId: string;
-    transactionReference: string;
-    status: string;
-    amount: number;
-    currency: string;
-  }) {
+  async handleWebhook(@Body() body:WebhookDto) {
     return this.paymentService.handlePaymentWebhook(body);
   }
 

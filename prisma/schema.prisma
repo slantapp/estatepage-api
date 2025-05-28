@@ -143,6 +143,7 @@ model Payment {
   service     Service  @relation(fields: [serviceId], references: [id])
   amount      Float
   status      String // e.g., "paid", "pending", "failed"
+  paymentReference String @unique
   paymentDate DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
