@@ -27,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     estateId: string;
   }): Promise<User> {
     try {
-      console.log('JWT Payload:', payload);
+      // console.log('JWT Payload:', payload);
 
       const user = await this.userService.getUserById(payload.sub);
 

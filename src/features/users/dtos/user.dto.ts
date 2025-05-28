@@ -19,7 +19,7 @@ export class CreateUserDto {
 
   
   @Expose()
-  access_token?: string;
+  token?: string;
 
   @Expose()
   message?: string;

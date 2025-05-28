@@ -1,9 +1,13 @@
 import * as bcrypt from 'bcryptjs';
 import * as dotenv from 'dotenv';
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes, createHash, createCipheriv, createDecipheriv } from 'crypto';
 import { User } from '@prisma/client';
 
 dotenv.config();
+
+const ENC_ALGO = 'aes-256-cbc';
+const ENC_KEY = process.env.SECRET_ENCRYPT_KEY?.padEnd(32, '0').slice(0, 32) || 'default_secret_key_32bytes!!'; // 32 bytes
+const ENC_IV = process.env.SECRET_ENCRYPT_IV?.padEnd(16, '0').slice(0, 16) || 'default_iv_16bytes!'; // 16 bytes
 
 export class encrypt {
   static async encryptpass(password: string) {
@@ -57,5 +61,20 @@ export class encrypt {
       Date.now() < user.resetTokenExpiresAt;
 
     return isTokenValid;
+  }
+
+  // For reversible encryption (not for passwords)
+  static encryptField(value: string): string {
+    const cipher = createCipheriv(ENC_ALGO, ENC_KEY, ENC_IV);
+    let encrypted = cipher.update(value, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return encrypted;
+  }
+
+  static decryptField(encrypted: string): string {
+    const decipher = createDecipheriv(ENC_ALGO, ENC_KEY, ENC_IV);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
   }
 }

@@ -25,6 +25,20 @@ export class UsersService {
     } });
   }
 
+  //getAllUsers
+  async getAllUsers(): Promise<User[]> {
+    try {
+      return await this.prisma.user.findMany({
+        include: {
+          estate: true, // Include estate information if needed
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      throw new Error('Failed to fetch users');
+    }
+  }
+
   async createNewUser(
     details: CreateNewUserDto,
     res: Response,

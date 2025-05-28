@@ -74,15 +74,31 @@ export class EstateService {
   }
 
   getEstateProfile(id: string) {
-    // Fetch the estate profile by ID
+    // Fetch the estate profile by ID and decrypt apiSecret/apiKey if present
     return this.prisma.estate.findUnique({
       where: { id },
-
+    }).then(estate => {
+      if (!estate) return null;
+      // Decrypt apiSecret and apiKey if they exist
+      estate.apiSecret = estate.apiSecret ? encrypt.decryptField(estate.apiSecret) : null;
+      estate.apiKey = estate.apiKey ? encrypt.decryptField(estate.apiKey) : null;
+      return estate;
     });
   }
 
-  update(id: number, updateEstateDto: UpdateEstateDto) {
-    return `This action updates a #${id} estate`;
+  async update(id: string, updateEstateDto: UpdateEstateDto) {
+    // Encrypt apiSecret and apiKey if present in updateEstateDto
+    const data = { ...updateEstateDto };
+    if (data.apiSecret) {
+      data.apiSecret = encrypt.encryptField(data.apiSecret);
+    }
+    if (data.apiKey) {
+      data.apiKey = encrypt.encryptField(data.apiKey);
+    }
+    return this.prisma.estate.update({
+      where: { id },
+      data,
+    });
   }
 
   remove(id: number) {
@@ -128,12 +144,12 @@ export class EstateService {
 
 
   async bulkCreateEstateFeatures(dto: BulkCreateEstateFeatureDto) {
-  return this.prisma.estateFeature.createMany({
-    data: dto.items,
-    skipDuplicates: true, // optional
-  });
-}
-  async bulkCreateEstateGallery(dto:  BulkCreateEstateGalleryDto) {
+    return this.prisma.estateFeature.createMany({
+      data: dto.items,
+      skipDuplicates: true, // optional
+    });
+  }
+  async bulkCreateEstateGallery(dto: BulkCreateEstateGalleryDto) {
     return this.prisma.estateGallery.createMany({
       data: dto.items,
       skipDuplicates: true, // optional

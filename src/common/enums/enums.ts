@@ -9,9 +9,9 @@ export enum UserRoles {
 }
 
 export enum TRANSACTIONSTATUS {
-  PENDING = 'PENDING',
-  SUCCESS = 'SUCCESS',
-  FAILED = 'FAILED',
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
 }
 
 export enum PAYMENTMETHODS {
@@ -27,9 +27,9 @@ export enum ServiceStatus {
 }
 
 export enum BillingCycle {
-  MONTHLY = 'MONTHLY',
-  QUARTERLY = 'QUARTERLY',
-  SEMI_ANNUALLY = 'SEMI_ANNUALLY',
-  ANNUALLY = 'ANNUALLY',
-  ONE_TIME = 'ONE_TIME',
+  MONTHLY = 'monthly',
+  QUARTERLY = 'quaterly',
+  BI_ANNUALLY = 'bi-annually',
+  ANNUALLY = 'annually',
+  ONE_TIME = 'one-time',
 }

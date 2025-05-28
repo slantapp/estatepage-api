@@ -42,8 +42,9 @@ export class EstateServiceController {
   }
 
   @Get('/:id')
-  findOne(@Param('id') id: string) {
-    return this.estateServiceService.findServiceById(id);
+  async findOne(@Param('id') id: string, @Res() res: Response) {
+    const service = await this.estateServiceService.findServiceById(id);
+    jsonResponse(StatusCodes.OK, service, res, 'Service fetched successfully');
   }
 
   @UseGuards(JwtAuthGuard,RolesGuard)
@@ -76,7 +77,7 @@ export class EstateServiceController {
   async fetchAllServicesForUserInEstate(
     @Req() req: Request,
     @Param('estateId') estateId: string,
-    @Query('status') status?: 'COMPLETED' | 'PENDING' | 'FAILED',
+    @Query('status') status?: 'completed' | 'pending' | 'failed',
     @Query('page') page = 1,
     @Query('limit') limit = 10,
   ) {
@@ -103,7 +104,7 @@ export class EstateServiceController {
   async fetchServicesPaymentActivities(
     @Req() req: Request,
     @Param('estateId') estateId: string,
-    @Query('status') status?: 'COMPLETED' | 'PENDING' | 'FAILED',
+    @Query('status') status?: 'completed' | 'pending' | 'failed',
     @Query('page') page = 1,
     @Query('limit') limit = 10,
   ) {
@@ -119,6 +120,25 @@ export class EstateServiceController {
       message: 'Fetched services for user in estate successfully',
       data: result,
 
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN)
+  @Get('/admin/user-payment-summary/:estateId')
+  async getAllUsersPaymentSummary(
+    @Param('estateId') estateId: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    const result = await this.estateServiceService.getAllUsersPaymentSummary(
+      estateId,
+      Number(page),
+      Number(limit),
+    );
+    return {
+      message: 'Fetched user payment summaries successfully',
+      data: result,
     };
   }
 }

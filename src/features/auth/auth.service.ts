@@ -174,9 +174,9 @@ export class AuthService {
             const responseDto = plainToInstance(UserResponseDto, user, {
                 excludeExtraneousValues: true, // Ensures only `@Expose` fields are included
             });
+            responseDto.token = token;
             return jsonResponse(
                 StatusCodes.OK, {
-                token: token,
                 user: responseDto,
             }, res)
 

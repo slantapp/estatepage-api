@@ -14,18 +14,18 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   password     String
   fullName     String?
   profileUrl   String?
   houseAddress String?
   phoneNumber  String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   // Relations
   estateId     String?
-  estate       Estate?   @relation(fields: [estateId], references: [id])
+  estate       Estate?  @relation(fields: [estateId], references: [id])
 
   // Add these fields:
   passwordResetToken     String? // hashed token for password reset
@@ -43,38 +43,49 @@ model User {
 
   AuditLog AuditLog[]
 
-  role  String @default("USER") // e.g., "USER", "ADMIN"
+  role String @default("USER") // e.g., "USER", "ADMIN"
 }
 
 model Service {
-  id           String    @id @default(cuid())
-  name         String    @unique
-  
+  id   String @id @default(cuid())
+  name String @unique
+
   description  String?
   price        Float
   billingCycle String // e.g., "monthly", "yearly"
-  status       String // e.g., "active", "inactive", "cancelled"
+  isActive     Boolean   @default(true)
   startDate    DateTime  @default(now())
   endDate      DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  estateId     String
-  estate       Estate    @relation(fields: [estateId], references: [id])
-
+  estateId String
+  estate   Estate @relation(fields: [estateId], references: [id])
 
   Payment Payment[]
 }
 
 model Estate {
-  id           String   @id @default(cuid())
+  id           String  @id @default(cuid())
   name         String
   address      String
+  phone        String? // Contact phone number for the estate
+  email        String? // Contact email for the estate
   supportEmail String?
   supportPhone String?
-  users        User[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+
+  apiKey    String? // API key for external integrations
+  apiSecret String? // API secret for external integrations
+  currency  String? // Currency used in the estate, e.g., "NGN", "USD"
+
+  smsNotifications   Boolean  @default(false) // Whether SMS notifications are enabled
+  emailNotifications Boolean  @default(false) // Whether email notifications are enabled
+  paymentReminders   Boolean  @default(false) // Whether payment reminders are enabled
+  reminderDays       Int      @default(7) // Number of days before due date to send reminders
+  paymentGracePeriod Int      @default(3) // Grace period in days for payments
+  users              User[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   PaymentGatewayConfig PaymentGatewayConfig[]
 
@@ -124,7 +135,6 @@ model AuditLog {
   createdAt DateTime @default(now())
 }
 
-
 model PaymentGatewayConfig {
   id       String @id @default(cuid())
   estateId String
@@ -150,6 +160,7 @@ model PaymentTransaction {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
 model EstateFeature {
   id          String   @id @default(cuid())
   estateId    String
@@ -171,11 +182,11 @@ model EstateGallery {
 }
 
 model EstateStreet {
-  id        String   @id @default(cuid())
-  estateId  String
-  imageUrl  String // URL of the street image
-  estate    Estate   @relation(fields: [estateId], references: [id])
+  id         String   @id @default(cuid())
+  estateId   String
+  imageUrl   String // URL of the street image
+  estate     Estate   @relation(fields: [estateId], references: [id])
   streetName String // Name of the street
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

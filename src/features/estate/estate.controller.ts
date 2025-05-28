@@ -35,13 +35,15 @@ export class EstateController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.estateService.getEstateProfile(id);
+  async findOne(@Param('id') id: string, @Res() res: Response) {
+    const estate = await this.estateService.getEstateProfile(id);
+    jsonResponse(StatusCodes.OK, {estate: estate}, res, 'Estate fetched successfully');
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEstateDto: UpdateEstateDto) {
-    return this.estateService.update(+id, updateEstateDto);
+  async update(@Param('id') id: string, @Body() updateEstateDto: UpdateEstateDto, @Res() res: Response) {
+    const result= await this.estateService.update(id, updateEstateDto);
+    jsonResponse(StatusCodes.OK, {estate: result}, res, 'Estate updated successfully');
   }
 
   @Delete(':id')

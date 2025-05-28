@@ -21,7 +21,13 @@ async function bootstrap() {
   // Enable CORS for Swagger UI
   app.enableCors();
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Strip properties that do not have decorators in the DTO
+      forbidNonWhitelisted: true, // Throw error if non-whitelisted properties are present
+      transform: true, // Automatically transform payloads to be objects typed according to their DTO classes
+    }),
+  );
 
   // Set global prefix
   app.setGlobalPrefix(BASE_PATH || 'api');

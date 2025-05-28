@@ -82,7 +82,7 @@ export class EstateServiceService {
   async fetchAllServicesForUserInEstate(
     estateId: string,
     userId: string,
-    filterStatus?: 'COMPLETED' | 'PENDING' | 'FAILED',
+    filterStatus?: 'completed' | 'pending' | 'failed',
     page = 1,
     limit = 10,
   ) {
@@ -119,8 +119,8 @@ export class EstateServiceService {
           description: service.description,
           price: service.price,
           billingCycle: service.billingCycle,
-          serviceStatus: service.status,
-          paymentStatus: payment?.status ?? 'PENDING',
+          serviceStatus: service.isActive,
+          status: payment?.status ?? 'pending',
           paymentDetails: payment ?? null,
         };
       }),
@@ -128,7 +128,7 @@ export class EstateServiceService {
 
     // Step 3: Filter if needed
     const filtered = filterStatus
-      ? enriched.filter((s) => s.paymentStatus === filterStatus)
+      ? enriched.filter((s) => s.status === filterStatus)
       : enriched;
 
     // Step 4: Get total count of services in estate
@@ -157,7 +157,7 @@ export class EstateServiceService {
 
   async fetchAllPaymentStatusesForAllUsersInEstate(
     estateId: string,
-    filterStatus?: 'COMPLETED' | 'PENDING' | 'FAILED',
+    filterStatus?: 'completed' | 'pending' | 'failed',
     page = 1,
     limit = 10,
   ) {
@@ -170,8 +170,10 @@ export class EstateServiceService {
         id: true,
         name: true,
         billingCycle: true,
-        status: true,
+        isActive: true,
         createdAt: true,
+        price: true,
+        endDate: true, // Assuming endDate is a field in the service model
 
       },
     });
@@ -183,6 +185,7 @@ export class EstateServiceService {
         fullName: true,
         email: true,
         phoneNumber: true,
+
       },
     });
 
@@ -212,38 +215,41 @@ export class EstateServiceService {
         const key = `${user.id}_${service.id}`;
         const payment = paymentMap.get(key);
 
-        const paymentStatus = payment?.status ?? 'PENDING';
+        const status = payment?.status ?? 'pending';
 
         return {
           serviceId: service.id,
           serviceName: service.name,
           billingCycle: service.billingCycle,
-          serviceStatus: service.status,
+          serviceStatus: service.isActive,
 
           userId: user.id,
           fullName: user.fullName,
           email: user.email,
           phoneNumber: user.phoneNumber,
 
-          paymentStatus,
+          status,
           paymentDate: payment?.createdAt ?? service.createdAt,
-          amount: payment?.amount ?? null,
+          dueDate: service.endDate,
+          amount: payment?.amount ? payment.amount : service.price ,
         };
       });
     });
 
     // Apply filter if needed
     const filtered = filterStatus
-      ? matrix.filter((entry) => entry.paymentStatus === filterStatus)
+      ? matrix.filter((entry) => entry.status === filterStatus)
       : matrix;
 
     const total = filtered.length;
 
+    
     // Apply pagination after filtering
     const paginated = filtered.slice(skip, skip + limit);
+  
 
     return {
-      data: paginated,
+      payments: paginated,
       total,
       page,
       limit,
@@ -326,5 +332,97 @@ export class EstateServiceService {
     });
     // 3. Return a success message
     return { message: 'Service deleted successfully' };
+  }
+
+  /**
+   * @description Returns a summary for each user in the estate: total completed payment and number of pending payments.
+   * @param estateId - The ID of the estate.
+   * @param page - The page number for pagination (default 1).
+   * @param limit - The number of users per page (default 10).
+   * @returns Paginated user payment summaries.
+   */
+  async getAllUsersPaymentSummary(estateId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    // Fetch all users in the estate except admins
+    const users = await this.prisma.user.findMany({
+      where: {
+        role: { not: 'ADMIN' }, // Exclude admins
+      },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phoneNumber: true,
+        houseAddress: true,
+        createdAt: true,
+      },
+      skip,
+      take: limit,
+    });
+
+    // Get total count for pagination
+    const total = await this.prisma.user.count({
+      where: {
+        role: { not: 'ADMIN' },
+      },
+    });
+
+    // Fetch all services in the estate
+    const services = await this.prisma.service.findMany({
+      where: { estateId },
+      select: { id: true, price: true },
+    });
+
+    // Fetch all payments for these services
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        service: { estateId },
+      },
+      select: {
+        userId: true,
+        serviceId: true,
+        status: true,
+        amount: true,
+      },
+    });
+
+    // Build a map for quick lookup: userId_serviceId -> payment
+    const paymentMap = new Map<string, typeof payments[number]>();
+    payments.forEach((p) => {
+      paymentMap.set(`${p.userId}_${p.serviceId}`, p);
+    });
+
+    // For each user, calculate total completed payment and pending payments count
+    const result = users.map((user) => {
+      let totalCompletedPayment = 0;
+      let pendingPaymentsCount = 0;
+
+      services.forEach((service) => {
+        const key = `${user.id}_${service.id}`;
+        const payment = paymentMap.get(key);
+
+        if (payment && payment.status === 'completed') {
+          totalCompletedPayment += payment.amount;
+        } else {
+          // If no payment or not completed, count as pending
+          pendingPaymentsCount += 1;
+        }
+      });
+
+      return {
+        ...user,
+        totalCompletedPayment,
+        pendingPaymentsCount,
+      };
+    });
+
+    return {
+      users: result,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

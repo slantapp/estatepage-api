@@ -8,4 +8,7 @@ export class UserResponseDto extends CreateUserDto {
 
     @Expose()
     role: string;
+
+    @Expose()
+    estateId: string;
 }
