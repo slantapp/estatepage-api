@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Next,
+  Patch,
   Post,
   Query,
   Req,
@@ -81,7 +82,7 @@ export class AuthController {
     return await this.authService.resendLink(details, res);
   }
 
-  @Post('update-profile')
+  @Patch('/user')
   @UseGuards(JwtAuthGuard)
   @ApiBody({ type: UpdateUserDto })
   async updateProfile(

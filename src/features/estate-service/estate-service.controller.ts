@@ -141,4 +141,20 @@ export class EstateServiceController {
       data: result,
     };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/user/:estateId/payment')
+  async fetchAllPaymentStatusesForUserInEstate(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Param('estateId') estateId: string,
+  ) {
+    const userId = req.user.id; // Assuming user ID is stored in the request object
+    const result = await this.estateServiceService.fetchAllPaymentStatusesForUserInEstate(
+      estateId,
+      userId,
+    );
+    jsonResponse(StatusCodes.OK, {payments: result}, res, 'Fetched all payment statuses for user in estate successfully');
+    
+  }
 }

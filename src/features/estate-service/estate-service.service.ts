@@ -425,4 +425,68 @@ export class EstateServiceService {
       totalPages: Math.ceil(total / limit),
     };
   }
+
+  /**
+   * @description Fetches all payment statuses for a single user in a specific estate.
+   * For each service in the estate, returns the payment if it exists, otherwise marks as pending.
+   */
+  async fetchAllPaymentStatusesForUserInEstate(
+    estateId: string,
+    userId: string,
+  ) {
+    // Fetch all services in the estate
+    const services = await this.prisma.service.findMany({
+      where: { estateId },
+      select: {
+        id: true,
+        name: true,
+        billingCycle: true,
+        isActive: true,
+        createdAt: true,
+        price: true,
+        endDate: true,
+      },
+    });
+
+    // Fetch all payments for this user in this estate
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        userId,
+        service: { estateId },
+      },
+      select: {
+        id: true,
+        userId: true,
+        serviceId: true,
+        status: true,
+        amount: true,
+        createdAt: true,
+      },
+    });
+
+    // Map payments by serviceId for quick lookup
+    const paymentMap = new Map<string, typeof payments[number]>();
+    payments.forEach((p) => {
+      paymentMap.set(p.serviceId, p);
+    });
+
+    // For each service, return payment info or pending
+    const result = services.map((service) => {
+      const payment = paymentMap.get(service.id);
+      const status = payment?.status ?? 'pending';
+      return {
+        serviceId: service.id,
+        serviceName: service.name,
+        billingCycle: service.billingCycle,
+        serviceStatus: service.isActive,
+        status,
+        paymentDate: payment?.createdAt ?? service.createdAt,
+        dueDate: service.endDate,
+        amount: payment?.amount ?? service.price,
+        paymentId: payment?.id ?? null,
+      };
+    });
+
+    return result;
+  }
 }

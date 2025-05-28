@@ -109,20 +109,6 @@ model Notification {
   updatedAt DateTime @updatedAt
 }
 
-model Payment {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  serviceId   String
-  service     Service  @relation(fields: [serviceId], references: [id])
-  amount      Float
-  status      String // e.g., "paid", "pending", "failed"
-  paymentDate DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  PaymentTransaction PaymentTransaction[]
-}
 
 model AuditLog {
   id        String   @id @default(cuid())
@@ -149,11 +135,28 @@ model PaymentGatewayConfig {
   updatedAt DateTime @updatedAt
 }
 
+model Payment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id])
+  amount      Float
+  status      String // e.g., "paid", "pending", "failed"
+  paymentDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  PaymentTransaction PaymentTransaction[]
+}
+
+
 model PaymentTransaction {
   id            String   @id @default(cuid())
   paymentId     String
   payment       Payment  @relation(fields: [paymentId], references: [id])
   transactionId String // Unique ID from the payment gateway
+  transactionReference String // Reference for the transaction
   status        String // e.g., "success", "failed", "pending"
   amount        Float
   currency      String

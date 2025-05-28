@@ -20,6 +20,7 @@ import { CreateUserDto } from '../users/dtos/user.dto';
 import { UpdateUserDto } from '../users/dtos/update-user.dto';
 import { User } from '@prisma/client';
 import { Not } from 'typeorm';
+import { PrismaService } from '../prisma/prisma.service';
 // import dayjs from 'dayjs';
 
 @Injectable()
@@ -27,6 +28,7 @@ export class AuthService {
     constructor(
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
+        private readonly prisma: PrismaService,
         private readonly configService: ConfigService,
         private readonly cls: ClsService<ContextStore>,
     ) { }
@@ -60,7 +62,7 @@ export class AuthService {
 
     /**
      * @description create new User
-     * @param createUserDto user data
+     * @param createUserDto user datas
      * @param res Express Response
      * @returns user
      */
@@ -69,6 +71,11 @@ export class AuthService {
         res: Response,
     ): Promise<User | void> {
         try {
+            // Fetch the only estate in the DB
+            const estate = await this.prisma.estate.findFirst();
+            if (!estate) {
+                throw new Error('No estate found in the system');
+            }
 
             const verificationOtp = otpGenerator.generate(6, {
                 upperCaseAlphabets: false,
@@ -88,6 +95,7 @@ export class AuthService {
             const userSaving = {
                 ...createUserDto,
                 verificationOTP: verificationOtp,
+                estateId: estate.id, // assign estateId
             };
 
 
@@ -106,7 +114,7 @@ export class AuthService {
                 excludeExtraneousValues: true, // Ensures only `@Expose` fields are included
             });
 
-             jsonResponse(StatusCodes.OK, {user: responseDto}, res);
+            jsonResponse(StatusCodes.OK, {user: responseDto}, res);
         } catch (error) {
             console.error(error);
             if(error instanceof ConflictException) {

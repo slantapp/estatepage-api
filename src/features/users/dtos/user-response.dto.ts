@@ -11,4 +11,10 @@ export class UserResponseDto extends CreateUserDto {
 
     @Expose()
     estateId: string;
+
+    @Expose()
+    phoneNumber: string;
+
+    @Expose()
+    houseAddress: string;
 }
