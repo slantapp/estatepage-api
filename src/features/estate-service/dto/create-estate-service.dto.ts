@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDate, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsBoolean, IsDate, IsNotEmpty, IsNumber, IsString } from "class-validator";
 import { Type } from "class-transformer"; // ✅ Import this
 import { BillingCycle, ServiceStatus } from "src/common/enums/enums";
 
@@ -29,20 +29,20 @@ export class CreateEstateServiceDto {
   @ApiProperty({ enum: BillingCycle })
   billingCycle: BillingCycle;
 
-  @IsString()
+  @IsBoolean()
   @IsNotEmpty()
-  @ApiProperty({ enum: ServiceStatus })
-  status: ServiceStatus;
+  @ApiProperty()
+  isActive: boolean;
 
-  @IsDate()
-  @IsNotEmpty()
-  @Type(() => Date) 
-  @ApiProperty({ type: String, format: 'date-time' })
-  startDate: Date;
+  // @IsDate()
+  // @IsNotEmpty()
+  // @Type(() => Date) 
+  // @ApiProperty({ type: String, format: 'date-time' })
+  // startDate: Date;
 
-  @IsDate()
-  @IsNotEmpty()
-  @Type(() => Date) 
-  @ApiProperty({ type: String, format: 'date-time' })
-  endDate: Date;
+  // @IsDate()
+  // @IsNotEmpty()
+  // @Type(() => Date) 
+  // @ApiProperty({ type: String, format: 'date-time' })
+  // endDate: Date;
 }

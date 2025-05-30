@@ -156,7 +156,7 @@ model PaymentTransaction {
   id            String   @id @default(cuid())
   paymentId     String
   payment       Payment  @relation(fields: [paymentId], references: [id])
-  transactionId String // Unique ID from the payment gateway
+  transactionId Int // Unique ID from the payment gateway
   transactionReference String // Reference for the transaction
   status        String // e.g., "success", "failed", "pending"
   amount        Float

@@ -3,6 +3,7 @@ import { CreateEstateServiceDto } from './dto/create-estate-service.dto';
 import { UpdateEstateServiceDto } from './dto/update-estate-service.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { Not } from 'typeorm';
+import { calculateDueDate } from 'src/common/utils/date.utils';
 
 @Injectable()
 export class EstateServiceService {
@@ -110,6 +111,7 @@ export class EstateServiceService {
             amount: true,
             status: true,
             createdAt: true,
+            paymentReference: true,
           },
         });
 
@@ -200,6 +202,7 @@ export class EstateServiceService {
         serviceId: true,
         status: true,
         amount: true,
+        paymentReference: true,
         createdAt: true,
       },
     });
@@ -218,6 +221,7 @@ export class EstateServiceService {
         const status = payment?.status ?? 'pending';
 
         return {
+          id: payment?.id ?? null, // Payment ID if exists, otherwise null
           serviceId: service.id,
           serviceName: service.name,
           billingCycle: service.billingCycle,
@@ -460,6 +464,7 @@ export class EstateServiceService {
         serviceId: true,
         status: true,
         amount: true,
+        paymentReference: true,
         createdAt: true,
       },
     });
@@ -479,9 +484,10 @@ export class EstateServiceService {
         serviceName: service.name,
         billingCycle: service.billingCycle,
         serviceStatus: service.isActive,
+        userId,
         status,
         paymentDate: payment?.createdAt ?? service.createdAt,
-        dueDate: service.endDate,
+        dueDate: calculateDueDate(service.billingCycle, service.createdAt), // <-- use util
         amount: payment?.amount ?? service.price,
         paymentId: payment?.id ?? null,
       };

@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards, Res } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { Request } from 'express';
 import { WebhookDto } from './dto/webHook-payload.dto';
 import { JwtAuthGuard } from '../auth/guard/JWT-auth.guard';
+import jsonResponse from 'src/common/utils/lib';
 
 @Controller('payment')
 export class PaymentController {
@@ -21,13 +22,14 @@ export class PaymentController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.paymentService.findOne(+id);
+   async findOne(@Param('id') id: string, @Res() res: Response) {
+    const payment = await this.paymentService.findOne(id);
+    jsonResponse(200, payment, res, 'Payment fetched successfully');
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePaymentDto: UpdatePaymentDto) {
-    return this.paymentService.update(+id, updatePaymentDto);
+    return this.paymentService.update(id, updatePaymentDto);
   }
 
   @Delete(':id')
@@ -49,7 +51,7 @@ export class PaymentController {
    * Webhook endpoint for payment gateway to notify about transaction status.
    */
   @Post('webhook')
-  async handleWebhook(@Body() body:WebhookDto) {
+  async handleWebhook(@Body() body:Partial<WebhookDto>) {
     return this.paymentService.handlePaymentWebhook(body);
   }
 
