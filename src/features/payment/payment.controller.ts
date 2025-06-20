@@ -9,7 +9,7 @@ import jsonResponse from 'src/common/utils/lib';
 
 @Controller('payment')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(private readonly paymentService: PaymentService) { }
 
   @Post()
   create(@Body() createPaymentDto: CreatePaymentDto) {
@@ -20,9 +20,15 @@ export class PaymentController {
   findAll() {
     return this.paymentService.findAll();
   }
+  
+  @Get("/monthly-summary")
+  async getCompletedPaymentsSummary() {
+    return this.paymentService.getMonthlyCompletedTransactionsSummary();
+  }
+  
 
   @Get(':id')
-   async findOne(@Param('id') id: string, @Res() res: Response) {
+  async findOne(@Param('id') id: string, @Res() res: Response) {
     const payment = await this.paymentService.findOne(id);
     jsonResponse(200, payment, res, 'Payment fetched successfully');
   }
@@ -42,8 +48,8 @@ export class PaymentController {
    */
   @UseGuards(JwtAuthGuard)
   @Post('initiate')
-  async initiatePayment(@Body() body:CreatePaymentDto, @Req() req: Request) {
-    body.userId = req.user['id']; 
+  async initiatePayment(@Body() body: CreatePaymentDto, @Req() req: Request) {
+    body.userId = req.user['id'];
     return this.paymentService.initiatePayment(body);
   }
 
@@ -51,7 +57,7 @@ export class PaymentController {
    * Webhook endpoint for payment gateway to notify about transaction status.
    */
   @Post('webhook')
-  async handleWebhook(@Body() body:Partial<WebhookDto>) {
+  async handleWebhook(@Body() body: Partial<WebhookDto>) {
     return this.paymentService.handlePaymentWebhook(body);
   }
 
@@ -62,4 +68,6 @@ export class PaymentController {
   async getUserCompletedPaymentsSummary(@Param('userId') userId: string) {
     return this.paymentService.getUserCompletedPaymentsSummary(userId);
   }
+
+
 }

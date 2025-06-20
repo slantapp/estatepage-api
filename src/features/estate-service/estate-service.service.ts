@@ -165,7 +165,13 @@ export class EstateServiceService {
   ) {
     const skip = (page - 1) * limit;
 
-    // Fetch all services in the estate
+    // Define monthly date ranges
+    const now = new Date();
+    const currentMonthStart = startOfMonth(now);
+    const currentMonthEnd = endOfMonth(now);
+    const lastMonthStart = startOfMonth(subMonths(now, 1));
+    const lastMonthEnd = endOfMonth(subMonths(now, 1));
+
     const services = await this.prisma.service.findMany({
       where: { estateId },
       select: {
@@ -175,23 +181,19 @@ export class EstateServiceService {
         isActive: true,
         createdAt: true,
         price: true,
-        endDate: true, // Assuming endDate is a field in the service model
-
+        endDate: true,
       },
     });
 
-    // Fetch all users in the estate
     const users = await this.prisma.user.findMany({
       select: {
         id: true,
         fullName: true,
         email: true,
         phoneNumber: true,
-
       },
     });
 
-    // Fetch all payments in this estate (to map easily)
     const payments = await this.prisma.payment.findMany({
       where: {
         service: { estateId },
@@ -207,7 +209,6 @@ export class EstateServiceService {
       },
     });
 
-    // Create a map of payments by `${userId}_${serviceId}`
     const paymentMap = new Map<string, typeof payments[number]>();
     payments.forEach((p) => {
       paymentMap.set(`${p.userId}_${p.serviceId}`, p);
@@ -221,7 +222,7 @@ export class EstateServiceService {
         const status = payment?.status ?? 'pending';
 
         return {
-          id: payment?.id ?? null, // Payment ID if exists, otherwise null
+          id: payment?.id ?? null,
           serviceId: service.id,
           serviceName: service.name,
           billingCycle: service.billingCycle,
@@ -235,31 +236,39 @@ export class EstateServiceService {
           status,
           paymentDate: payment?.createdAt ?? service.createdAt,
           dueDate: service.endDate,
-          amount: payment?.amount ? payment.amount : service.price ,
+          amount: payment?.amount ? payment.amount : service.price,
         };
       });
     });
 
-    // Apply filter if needed
     const filtered = filterStatus
       ? matrix.filter((entry) => entry.status === filterStatus)
       : matrix;
 
     const total = filtered.length;
+    const completedPayments = payments.filter(p => p.status === 'completed');
 
-    
-    // Apply pagination after filtering
+
+    // 🧮 Calculate total completed payment amounts per month
+    const currentMonthTotalAmount = completedPayments
+      .filter(p => p.createdAt >= currentMonthStart && p.createdAt <= currentMonthEnd)
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    const lastMonthTotalAmount = completedPayments
+      .filter(p => p.createdAt >= lastMonthStart && p.createdAt <= lastMonthEnd)
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+
     const paginated = filtered.slice(skip, skip + limit);
-  
 
     return {
       payments: paginated,
       total,
       page,
       limit,
+      currentMonthTotalAmount,
+      lastMonthTotalAmount,
     };
   }
-
 
 
   /**
@@ -496,3 +505,18 @@ export class EstateServiceService {
     return result;
   }
 }
+
+function startOfMonth(now: Date): Date {
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+function endOfMonth(now: Date): Date {
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+}
+
+function subMonths(now: Date, months: number): Date {
+  const d = new Date(now);
+  d.setMonth(d.getMonth() - months);
+  return d;
+}
+

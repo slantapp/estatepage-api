@@ -5,6 +5,8 @@ import { UpdatePaymentDto } from './dto/update-payment.dto';
 import axios from 'axios';
 import { WebhookDto } from './dto/webHook-payload.dto';
 import { Not } from 'typeorm';
+// Removed invalid import of sql from @prisma/client/runtime
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class PaymentService {
@@ -94,23 +96,24 @@ export class PaymentService {
     });
   }
 
-  /**
-   * Get all completed transactions grouped by month with total amount for each month
-   */
-  async getCompletedTransactionsGroupedByMonth() {
-    // Raw SQL for grouping by month (works with PostgreSQL, adjust for other DBs)
-    return this.prisma.$queryRaw<
-      Array<{ month: string; totalAmount: number }>
-    >`
+/**
+ * Get all completed transactions grouped by month with total amount for each month
+ */
+async getMonthlyCompletedTransactionsSummary() {
+  return this.prisma.$queryRaw<
+    Array<{ month: string; totalAmount: number }>
+  >(
+    Prisma.sql`
       SELECT 
-        TO_CHAR("createdAt", 'Month') AS month,
-        SUM(amount) AS "totalAmount"
-      FROM "PaymentTransaction"
-      WHERE status = 'success'
-      GROUP BY month, date_trunc('month', "createdAt")
-      ORDER BY date_trunc('month', "createdAt") ASC
-    `;
-  }
+        DATE_FORMAT(createdAt, '%M') AS month,
+        SUM(amount) AS revenue
+      FROM Payment
+      WHERE status = 'completed'
+      GROUP BY month
+      ORDER BY MIN(createdAt) ASC
+    `
+  );
+}
 
   /**
    * User initiates a payment for a service and gets Flutterwave payment link.
