@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE `Estate` ADD COLUMN `apiKey` VARCHAR(191) NULL,
-    ADD COLUMN `apiSecret` VARCHAR(191) NULL;

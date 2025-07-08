@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsObject, IsString, MinLength } from 'class-validator';
 
 
 export class AdminDto {
@@ -16,9 +16,13 @@ export class CreateEstateDto {
     @IsString()
     address: string;
 
+    @IsEmail()
+    @IsString()
     supportEmail?: string;
     
+    @IsString()
     supportPhone?: string;
 
+    @IsObject()
     admin: AdminDto;
 }

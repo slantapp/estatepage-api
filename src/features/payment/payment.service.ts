@@ -6,7 +6,7 @@ import axios from 'axios';
 import { WebhookDto } from './dto/webHook-payload.dto';
 import { Not } from 'typeorm';
 // Removed invalid import of sql from @prisma/client/runtime
-import { Prisma } from '@prisma/client';
+import { Prisma, PaymentStatus } from '@prisma/client';
 
 @Injectable()
 export class PaymentService {
@@ -50,9 +50,13 @@ export class PaymentService {
   update(id: string, updatePaymentDto: UpdatePaymentDto) {
     //update payment logic here
     try {
+      // Remove undefined properties before passing to Prisma
+      const filteredData = Object.fromEntries(
+        Object.entries(updatePaymentDto).filter(([_, v]) => v !== undefined)
+      );
       const updatedPayment = this.prisma.payment.update({
         where: { id },
-        data: updatePaymentDto,
+        data: filteredData,
       });
       if (!updatedPayment) {
         throw new NotFoundException(`Payment with ID ${id} not found`);
@@ -116,32 +120,63 @@ async getMonthlyCompletedTransactionsSummary() {
 }
 
   /**
-   * User initiates a payment for a service and gets Flutterwave payment link.
+   * User initiates a payment for an existing pending payment record.
    */
   async initiatePayment(data: CreatePaymentDto) {
-    // 1. Generate a unique payment reference
+    // 1. First, check if there's an existing pending payment for this user and service in the current billing period
+    const now = new Date();
+    let payment = await this.prisma.payment.findFirst({
+      where: {
+        userId: data.userId,
+        serviceId: data.serviceId,
+        status: 'PENDING',
+        billingPeriodStart: { lte: now },
+        billingPeriodEnd: { gte: now },
+      },
+      select: {
+        id: true,
+        userId: true,
+        serviceId: true,
+        amount: true,
+        status: true,
+        paymentReference: true,
+        billingPeriodStart: true,
+        billingPeriodEnd: true,
+        dueDate: true,
+      },
+    });
+
+    if (!payment) {
+      throw new Error('No pending payment found for this service in the current billing period. Please contact admin.');
+    }
+
+    // 2. Update the payment reference for this payment session
     const paymentReference = `ESTATE-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-
-    // 2. Prepare payment data for DB
-    const paymentData = {
-      userId: data.userId,
-      serviceId: data.serviceId,
-      amount: data.amount,
-      status: 'pending',
-      paymentReference,
-    };
-
-    let payment;
+    
     try {
-      // 3. Create a pending payment in your DB with the reference
-      payment = await this.prisma.payment.create({ data: paymentData });
+      // 3. Update the payment with new reference
+      payment = await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: { paymentReference },
+        select: {
+          id: true,
+          userId: true,
+          serviceId: true,
+          amount: true,
+          status: true,
+          paymentReference: true,
+          billingPeriodStart: true,
+          billingPeriodEnd: true,
+          dueDate: true,
+        },
+      });
 
       // 4. Call Flutterwave initialize endpoint
       const flutterwaveRes = await axios.post(
         'https://api.flutterwave.com/v3/payments',
         {
           tx_ref: paymentReference,
-          amount: data.amount,
+          amount: payment.amount, // Use the amount from the payment record
           currency: data.currency || 'NGN',
           redirect_url: process.env.FLW_REDIRECT_URL,
           customer: {
@@ -165,11 +200,19 @@ async getMonthlyCompletedTransactionsSummary() {
         paymentId: payment.id,
         paymentReference,
         paymentLink: flutterwaveRes.data.data.link,
+        billingPeriod: {
+          start: payment.billingPeriodStart,
+          end: payment.billingPeriodEnd,
+          dueDate: payment.dueDate,
+        },
       };
     } catch (error) {
-      // If Flutterwave call fails, delete the payment record to avoid orphaned DB entries
+      // If Flutterwave call fails, clear the payment reference
       if (payment) {
-        await this.prisma.payment.delete({ where: { id: payment.id } });
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { paymentReference: `FAILED-${Date.now()}` }, // Use a failed reference instead of null
+        });
       }
       if (error.response && error.response.data) {
         throw new Error(`Flutterwave error: ${JSON.stringify(error.response.data)}`);
@@ -207,7 +250,7 @@ async getMonthlyCompletedTransactionsSummary() {
     // 3. Update the payment status
     await this.prisma.payment.update({
       where: { id: payment.id },
-      data: { status: webhookData.data.status },
+      data: { status: webhookData.data.status as PaymentStatus },
     });
 
     return transaction;
@@ -220,7 +263,7 @@ async getMonthlyCompletedTransactionsSummary() {
     const completedPayments = await this.prisma.payment.findMany({
       where: {
         userId,
-        status: 'completed',
+        status: PaymentStatus.COMPLETED,
       },
       select: {
         id: true,

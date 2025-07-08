@@ -7,7 +7,7 @@ import { ClsService } from 'nestjs-cls';
 import jsonResponse from 'src/common/utils/lib';
 import { StatusCodes } from 'http-status-codes';
 import { NextFunction, Response } from 'express';
-import { Verifications } from 'src/common/enums/enums';
+import { VerificationStatus } from '@prisma/client';
 import { CreateNewUserDto } from './dtos/create-new-user.dto';
 import * as otpGenerator from 'otp-generator';
 import { encrypt } from 'src/common/utils/encryptor.utils';
@@ -204,7 +204,7 @@ export class AuthService {
             jsonResponse(StatusCodes.BAD_REQUEST, '', res, 'Invalid token or token has expired');
             return;
         }
-        if (user.verificationStatus === Verifications.VERIFIED) {
+        if (user.verificationStatus === VerificationStatus.VERIFIED) {
             jsonResponse(
                 StatusCodes.BAD_REQUEST,
                 '',
@@ -215,7 +215,7 @@ export class AuthService {
         }
         const verifyUser = {
             ...user,
-            verificationStatus: Verifications.VERIFIED,
+            verificationStatus: VerificationStatus.VERIFIED,
             emailVerifiedAt: BigInt(Date.now()),
             verificationOTP: null,
         } as UpdateUserDto;
@@ -239,7 +239,7 @@ export class AuthService {
                 return;
             }
 
-            if (user.verificationStatus === Verifications.UNVERIFIED) {
+            if (user.verificationStatus === VerificationStatus.UNVERIFIED) {
                 jsonResponse(
                     StatusCodes.BAD_REQUEST,
                     '',

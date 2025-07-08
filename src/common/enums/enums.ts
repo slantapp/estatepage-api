@@ -1,6 +1,7 @@
 export enum Verifications {
-  VERIFIED = 'Verified',
-  UNVERIFIED = 'Unverified',
+  VERIFIED = 'VERIFIED',
+  UNVERIFIED = 'UNVERIFIED',
+  PENDING = 'PENDING',
 }
 
 export enum UserRoles {

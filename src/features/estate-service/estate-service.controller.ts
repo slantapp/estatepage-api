@@ -82,10 +82,11 @@ export class EstateServiceController {
     @Query('limit') limit = 10,
   ) {
     const userId = req.user.id; // Assuming user ID is stored in the request object
+    const upperCaseStatus = status ? status.toUpperCase() as 'COMPLETED' | 'PENDING' | 'FAILED' : undefined;
     const result = await this.estateServiceService.fetchAllServicesForUserInEstate(
       estateId,
       userId,
-      status,
+      upperCaseStatus,
       Number(page),
       Number(limit),
     );
@@ -109,9 +110,10 @@ export class EstateServiceController {
     @Query('limit') limit = 10,
   ) {
     
+    const upperCaseStatus = status ? status.toUpperCase() as 'COMPLETED' | 'PENDING' | 'FAILED' : undefined;
     const result = await this.estateServiceService.fetchAllPaymentStatusesForAllUsersInEstate(
       estateId,
-      status,
+      upperCaseStatus,
       Number(page),
       Number(limit),
     );

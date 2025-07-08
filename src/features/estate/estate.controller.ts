@@ -9,12 +9,13 @@ import { BulkCreateEstateFeatureDto, CreateEstateFeatureDto } from './dto/create
 import { BulkCreateEstateGalleryDto, CreateEstateGalleryDto } from './dto/create-estate-gallery.dto';
 import { BulkCreateEstateStreetDto, CreateEstateStreetDto } from './dto/create-estate-street.dto';
 
-@Controller('estate')
+@Controller('estates')
 export class EstateController {
   constructor(private readonly estateService: EstateService) { }
 
-  @Post()
+  @Post('/create')
   async create(@Body() createEstateDto: CreateEstateDto, @Res() res: Response) {
+    console.log('Creating estate with data:', createEstateDto);
     try {
       const estate = await this.estateService.create(createEstateDto);
       jsonResponse(StatusCodes.CREATED, estate, res, 'Estate created successfully');

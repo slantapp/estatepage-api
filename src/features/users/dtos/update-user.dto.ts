@@ -1,6 +1,6 @@
 import { OmitType, PartialType, ApiProperty } from '@nestjs/swagger';
 import { IsOptional } from 'class-validator';
-import { Verifications } from 'src/common/enums/enums';
+import { VerificationStatus } from '@prisma/client';
 import { CreateNewUserDto } from 'src/features/auth/dtos/create-new-user.dto';
 
 export class UpdateUserDto extends PartialType(
@@ -28,7 +28,7 @@ export class UpdateUserDto extends PartialType(
 
   @ApiProperty()
   @IsOptional()
-  verificationStatus?: Verifications;
+  verificationStatus?: VerificationStatus;
 
   @ApiProperty()
   @IsOptional()

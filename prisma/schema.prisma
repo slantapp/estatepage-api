@@ -31,7 +31,7 @@ model User {
   passwordResetToken     String? // hashed token for password reset
   resetTokenExpiresAt    BigInt? // store as timestamp (milliseconds since epoch)
   emailVerificationToken String? // hashed token for email verification
-  verificationStatus     String  @default("UNVERIFIED") // status of user verification
+  verificationStatus     VerificationStatus  @default(UNVERIFIED) // status of user verification
   passwordResetOTP       String? // OTP for password reset
   verificationOTP        String? // OTP for email verification
   otpExpiresAt           BigInt? // store as timestamp (milliseconds since epoch)
@@ -43,12 +43,12 @@ model User {
 
   AuditLog AuditLog[]
 
-  role String @default("USER") // e.g., "USER", "ADMIN"
+  role UserRole @default(USER) // e.g., "USER", "ADMIN"
 }
 
 model Service {
   id   String @id @default(cuid())
-  name String @unique
+  name String
 
   description  String?
   price        Float
@@ -63,6 +63,9 @@ model Service {
   estate   Estate @relation(fields: [estateId], references: [id])
 
   Payment Payment[]
+
+  // Make service name unique per estate
+  @@unique([name, estateId])
 }
 
 model Estate {
@@ -142,13 +145,41 @@ model Payment {
   serviceId   String
   service     Service  @relation(fields: [serviceId], references: [id])
   amount      Float
-  status      String // e.g., "paid", "pending", "failed"
+  status      PaymentStatus @default(PENDING) // Use enum for better type safety
   paymentReference String @unique
   paymentDate DateTime @default(now())
+  
+  // Billing period information
+  billingPeriodStart DateTime // Start of the billing period this payment covers
+  billingPeriodEnd   DateTime // End of the billing period this payment covers
+  dueDate           DateTime // When this payment is due
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   PaymentTransaction PaymentTransaction[]
+
+  // Ensure one payment per user per service per billing period
+  @@unique([userId, serviceId, billingPeriodStart])
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  VERIFIED
+  PENDING
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
 }
 
 
